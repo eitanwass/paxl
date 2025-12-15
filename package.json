@@ -1,0 +1,23 @@
+{
+  "name": "paxl",
+  "version": "1.0.0",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eitanwass/paxl.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eitanwass/paxl/issues"
+  },
+  "homepage": "https://github.com/eitanwass/paxl#readme",
+  "description": "",
+  "dependencies": {
+    "rapidx2j": "^0.7.1",
+    "txml": "^5.2.1"
+  }
+}
