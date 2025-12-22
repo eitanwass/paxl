@@ -1,8 +1,9 @@
-#include "parser.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+
+#include "parser.h"
 
 #define STACK_SIZE 256
 
@@ -22,24 +23,23 @@ static char* parse_tag_name(char* start, char** name_out, size_t* len_out) {
 }
 
 // Helper: Get or create children array
-static JSON_Array* get_children_array(JSON_Object* obj) {
-    JSON_Array* arr = json_object_get_array(obj, CHILDREN_FIELD_NAME);
+static yyjson_mut_val* get_children_array(yyjson_mut_doc* doc, yyjson_mut_val* obj) {
+    yyjson_mut_val* arr = yyjson_mut_obj_get(obj, CHILDREN_FIELD_NAME);
     if (!arr) {
-        JSON_Value* val = json_value_init_array();
-        arr = json_value_get_array(val);
-        json_object_set_value(obj, CHILDREN_FIELD_NAME, val);
+        arr = yyjson_mut_obj_add_arr(doc, obj, CHILDREN_FIELD_NAME);
     }
     return arr;
 }
 
-void _parse_xml(JSON_Object* root, char* xml) {
+// void _parse_xml(JSON_Object* root, char* xml) {
+void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
     if (!xml || !*xml || !root) return;
 
     // Stack for tracking open nodes during parsing
-    JSON_Object* stack[STACK_SIZE] = {NULL};
+    yyjson_mut_val* stack[STACK_SIZE] = {NULL};
     size_t stack_depth = 0;
     
-    JSON_Object* current = root;
+    yyjson_mut_val* current = root;
 
     char* cur = xml;
 
@@ -69,18 +69,16 @@ void _parse_xml(JSON_Object* root, char* xml) {
                 if (*cur == '>') cur++;
             } else {
                 // Opening tag
-                JSON_Array* children_arr = get_children_array(current);
+                yyjson_mut_val* children_arr = get_children_array(doc, current);
 
-                JSON_Value* new_node_val = json_value_init_object();
-                JSON_Object* new_node = json_value_get_object(new_node_val);
+                yyjson_mut_val* new_node = yyjson_mut_obj(doc);
 
                 char* node_name = NULL;
                 size_t node_name_len = 0;
 
                 cur = parse_tag_name(cur, &node_name, &node_name_len);
 
-                JSON_Value* new_node_name = json_value_init_string_with_len(node_name, node_name_len);
-                json_object_set_value(new_node, "tagName", new_node_name);
+                yyjson_mut_obj_add_strn(doc, new_node, "tagName", node_name, node_name_len);
 
                 // TODO: Parse attributes
 
@@ -94,7 +92,7 @@ void _parse_xml(JSON_Object* root, char* xml) {
                 if (*cur == '>') cur++;
 
                 // Add to current
-                json_array_append_value(children_arr, new_node_val);
+                yyjson_mut_arr_append(children_arr, new_node);
 
                 // Push to stack if not self-closing
                 if (!self_closing) {
@@ -111,11 +109,9 @@ void _parse_xml(JSON_Object* root, char* xml) {
             while (*cur && *cur != OPEN_BRACKET) cur++;
             size_t len = cur - start;
             if (len > 0) {
-                JSON_Array* children_arr = get_children_array(current);
+                yyjson_mut_val* children_arr = get_children_array(doc, current);
 
-                JSON_Value* content_text = json_value_init_string_with_len(start, len);
-
-                json_array_append_value(children_arr, content_text);
+                yyjson_mut_arr_add_strn(doc, children_arr, start, len);
             }
         }
     }

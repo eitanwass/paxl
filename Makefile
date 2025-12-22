@@ -19,7 +19,11 @@ STANDALONE ?= y
 EM_FLAGS :=
 
 CC_FLAGS := -flto -mnontrapping-fptoint
-CC_FLAGS += -Ilibs/parson
+# CC_FLAGS += -Ilibs/parson
+CC_FLAGS += -Ilibs/yyjson
+
+CC_FLAGS += -DYYJSON_DISABLE_READER=1
+CC_FLAGS += -DYYJSON_DISABLE_INCR_READER=1
 
 EXPORTS :=
 RUNTIME_EXPORTS :=
@@ -51,7 +55,8 @@ endif
 SRCS :=
 SRCS += $(SRC_DIR)/core/xml.c
 SRCS += $(SRC_DIR)/core/parser.c
-SRCS += $(LIBS_DIR)/parson/parson.c
+# SRCS += $(LIBS_DIR)/parson/parson.c
+SRCS += $(LIBS_DIR)/yyjson/yyjson.c
 
 .PHONY: all format clean
 

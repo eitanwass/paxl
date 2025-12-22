@@ -2,12 +2,14 @@
 #define __PARSER_H__
 
 #include <stddef.h>
-#include "parson.h"
+// #include "parson.h"
+#include "yyjson.h"
 
 #define OPEN_BRACKET '<'
 
 #define CHILDREN_FIELD_NAME "children"
 
-void _parse_xml(JSON_Object* root, char* xml);
+// void _parse_xml(JSON_Object* root, char* xml);
+void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml);
 
 #endif  // __PARSER_H__

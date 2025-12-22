@@ -3,9 +3,9 @@ import {parse} from "txml";
 
 import {parse as paxl_parse} from "./build/paxl.js";
 
-const repeats = 100000;  // Reduce repeats for larger XML
+const repeats = 10;
 const xml = `<root>${
-    Array.from({length: 10}, (_, i) => `<item id="${i}"><name>item${i}</name><value>${i * 10}</value></item>`).join('')
+    Array.from({length: 100}, (_, i) => `<item id="${i}"><name>item${i}</name><value>${i * 10}</value></item>`).join('')
 }</root>`;
 // const xml = `<xml>
 //             <child1>content1</child1>
