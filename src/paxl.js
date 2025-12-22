@@ -1,17 +1,14 @@
-import Paxl from './paxl_core.js';
+import Paxl from "./paxl_core.js"
 
 const paxl = await Paxl();
+const { _parse, _free_json, stringToNewUTF8, UTF8ToString } = paxl;
 
 export const parse = (xml) => {
-    const handle = paxl._parse(paxl.stringToNewUTF8(xml));
-    return globalThis.paxl_obj[handle];
-};
+    const ptr = _parse(stringToNewUTF8(xml));
 
-export const parse_new = (xml) => {
-    const ptr = paxl._parse_new(paxl.stringToNewUTF8(xml));
-    const jsonStr = paxl.UTF8ToString(ptr);
+    const res = UTF8ToString(ptr);
 
-    paxl._free_json(ptr);
-
-    return jsonStr;
+    _free_json(ptr);
+    
+    return res;
 }

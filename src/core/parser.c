@@ -15,20 +15,31 @@ static inline char* skip_ws(char* p) {
 // Helper: Parse tag name, return pointer after tag name
 static char* parse_tag_name(char* start, char** name_out, size_t* len_out) {
     char* p = start;
-    while (*p && *p != '>' && !isspace(*p)) p++;
+    while (*p && *p != '>' && *p != '/' && !isspace(*p)) p++;
     *len_out = p - start;
     *name_out = start;
     return p;
 }
 
-void _parse(XmlNode* root, char* xml) {
+// Helper: Get or create children array
+static JSON_Array* get_children_array(JSON_Object* obj) {
+    JSON_Array* arr = json_object_get_array(obj, CHILDREN_FIELD_NAME);
+    if (!arr) {
+        JSON_Value* val = json_value_init_array();
+        arr = json_value_get_array(val);
+        json_object_set_value(obj, CHILDREN_FIELD_NAME, val);
+    }
+    return arr;
+}
+
+void _parse_xml(JSON_Object* root, char* xml) {
     if (!xml || !*xml || !root) return;
 
     // Stack for tracking open nodes during parsing
-    XmlNode* stack[STACK_SIZE] = {NULL};
+    JSON_Object* stack[STACK_SIZE] = {NULL};
     size_t stack_depth = 0;
     
-    XmlNode* current = root;
+    JSON_Object* current = root;
 
     char* cur = xml;
 
@@ -51,19 +62,25 @@ void _parse(XmlNode* root, char* xml) {
                     stack_depth--;
                     current = stack[stack_depth];
                 }
-            }
-            // Check for self-closing or processing instruction
-            else if (*cur == '?' || *cur == '!') {
+            } else if (*cur == '?' || *cur == '!') {
+                // Check for self-closing or processing instruction
                 // Skip processing instructions and comments
                 while (*cur && *cur != '>') cur++;
                 if (*cur == '>') cur++;
-            }
-            else {
+            } else {
                 // Opening tag
-                XmlNode* new_node = (XmlNode*)malloc(sizeof(XmlNode));
-                memset(new_node, 0, sizeof(XmlNode));
+                JSON_Array* children_arr = get_children_array(current);
 
-                cur = parse_tag_name(cur, &(new_node->name), &(new_node->name_len));
+                JSON_Value* new_node_val = json_value_init_object();
+                JSON_Object* new_node = json_value_get_object(new_node_val);
+
+                char* node_name = NULL;
+                size_t node_name_len = 0;
+
+                cur = parse_tag_name(cur, &node_name, &node_name_len);
+
+                JSON_Value* new_node_name = json_value_init_string_with_len(node_name, node_name_len);
+                json_object_set_value(new_node, "tagName", new_node_name);
 
                 // TODO: Parse attributes
 
@@ -76,17 +93,8 @@ void _parse(XmlNode* root, char* xml) {
                 }
                 if (*cur == '>') cur++;
 
-                // Null-terminate the tag name now that cur is past it
-                char* tag_end = new_node->name + new_node->name_len;
-                *tag_end = '\0';
-
                 // Add to current
-                current->children = (XmlNode**)realloc(
-                    current->children,
-                    (current->child_count + 1) * sizeof(XmlNode*)
-                );
-                current->children[current->child_count] = new_node;
-                current->child_count++;
+                json_array_append_value(children_arr, new_node_val);
 
                 // Push to stack if not self-closing
                 if (!self_closing) {
@@ -97,30 +105,18 @@ void _parse(XmlNode* root, char* xml) {
                     }
                 }
             }
-        }
-        else {
+        } else {
             // Parse content
             char* start = cur;
             while (*cur && *cur != OPEN_BRACKET) cur++;
             size_t len = cur - start;
             if (len > 0) {
-                current->text = malloc(len + 1);
-                memcpy(current->text, start, len);
-                current->text[len] = '\0';
-                current->text_len = len;
+                JSON_Array* children_arr = get_children_array(current);
+
+                JSON_Value* content_text = json_value_init_string_with_len(start, len);
+
+                json_array_append_value(children_arr, content_text);
             }
         }
     }
-}
-
-void free_node(XmlNode* node) {
-    if (!node) return;
-    
-    for (size_t i = 0; i < node->child_count; i++) {
-        free_node(node->children[i]);
-    }
-    free(node->children);
-    // Don't free node->name, it's part of the xml string
-    free(node->text);
-    free(node);
 }

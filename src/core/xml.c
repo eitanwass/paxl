@@ -1,80 +1,44 @@
-#include <stdint.h>
-#include <string.h>
+#ifdef STANDALONE
 #include <stdio.h>
+#endif  // STANDALONE
+
 #include <stdlib.h>
+#include "parson.h"
 #include <emscripten/emscripten.h>
 
 #include "parser.h"
 
-EM_JS(int, create_js_object, (), {
-    // Create a global map if it doesn't exist
-    if (!globalThis.paxl_obj) globalThis.paxl_obj = {};
-    let id = globalThis.paxl_obj_counter || 0;
-    globalThis.paxl_obj_counter = id + 1;
-    globalThis.paxl_obj[id] = [];
-    return id;
-});
 
-EM_JS(int, create_js_child_object, (int parent_id, const char* tag_name), {
-    let child_id = globalThis.paxl_obj_counter || 0;
-    globalThis.paxl_obj_counter = child_id + 1;
-    globalThis.paxl_obj[child_id] = {
-        "tagName": UTF8ToString(tag_name),
-        "attributes": {},
-        "children": [],
-    };
-    
-    if ("children" in globalThis.paxl_obj[parent_id]) {
-        globalThis.paxl_obj[parent_id].children.push(globalThis.paxl_obj[child_id]);
-    } else {
-        globalThis.paxl_obj[parent_id].push(globalThis.paxl_obj[child_id]);
-    }
-    
-    return child_id;
-});
+EMSCRIPTEN_KEEPALIVE
+char* parse(char* xml) {
+    char* json_str = NULL;
+    JSON_Value* root = NULL;
+    JSON_Object* root_obj = NULL;
 
-EM_JS(void, set_js_object_value_direct, (int obj_id, const char* value), {
-    globalThis.paxl_obj[obj_id]["children"] = [UTF8ToString(value)];
-});
+    if (!xml || *xml == '\0') return NULL;
 
-// Recursively build JS objects from XmlNode tree
-static void build_js_from_node(const XmlNode* node, int obj_id) {
-    XmlNode* child = NULL;
-    for (size_t i = 0; i < node->child_count; i++) {
-        child = node->children[i];
+    root = json_value_init_object();
+    root_obj = json_value_get_object(root);
 
-        int child_id = create_js_child_object(obj_id, child->name);
-        if (child->child_count == 0) {
-            if (child->text) {
-                set_js_object_value_direct(child_id, child->text);
-            }
-        } else {
-            build_js_from_node(child, child_id);
-        }
-    }
-}
-
-// Parse XML string and return JS object handle
-int parse(char* xml) {
-    if (!xml || *xml == '\0') return -1;
-
-    
-    
-    // Allocate root node
-    XmlNode* root = (XmlNode*)malloc(sizeof(XmlNode));
-    memset(root, 0, sizeof(XmlNode));
-    
     // Parse XML into tree structure
-    _parse(root, xml);
+    _parse_xml(root_obj, xml);
+
+    json_str = json_serialize_to_string(root);
+
+    json_value_free(root);
     
-    // Create wrapper JS object
-    int wrapper_id = create_js_object();
-    
-    // Assume root has one child, the root element
-    build_js_from_node(root, wrapper_id);
-    
-    // Cleanup tree
-    free_node(root);
-    
-    return wrapper_id;
+    return json_str;
 }
+
+EMSCRIPTEN_KEEPALIVE
+void free_json(char *ptr) {
+    json_free_serialized_string(ptr);
+}
+
+#ifdef STANDALONE
+int main() {
+    char* ptr = parse("<xml><child1>content1</child1><child2>content2</child2><emptyChild/><childNoContent></childNoContent></xml>");
+    printf("%s\n", ptr);
+    free_json(ptr);
+}
+#endif  // STANDALONE
