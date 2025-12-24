@@ -1,22 +1,26 @@
+#include "parser.h"
+
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
-
-#include "parser.h"
 
 #define STACK_SIZE 256
 
 // Helper: Skip whitespace
 static inline char* skip_ws(char* p) {
-    while (*p && isspace(*p)) p++;
+    while (*p && isspace(*p)) {
+        p++;
+    }
     return p;
 }
 
 // Helper: Parse tag name, return pointer after tag name
 static char* parse_tag_name(char* start, char** name_out, size_t* len_out) {
     char* p = start;
-    while (*p && *p != '>' && *p != '/' && !isspace(*p)) p++;
+    while (*p && *p != '>' && *p != '/' && !isspace(*p)) {
+        p++;
+    }
     *len_out = p - start;
     *name_out = start;
     return p;
@@ -33,29 +37,37 @@ static yyjson_mut_val* get_children_array(yyjson_mut_doc* doc, yyjson_mut_val* o
 
 // void _parse_xml(JSON_Object* root, char* xml) {
 void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
-    if (!xml || !*xml || !root) return;
+    if (!xml || !*xml || !root) {
+        return;
+    }
 
     // Stack for tracking open nodes during parsing
     yyjson_mut_val* stack[STACK_SIZE] = {NULL};
     size_t stack_depth = 0;
-    
+
     yyjson_mut_val* current = root;
 
     char* cur = xml;
 
     while (cur && *cur) {
         cur = skip_ws(cur);
-        if (!*cur) break;
+        if (!*cur) {
+            break;
+        }
 
         if (*cur == OPEN_BRACKET) {
             cur++;
 
             // Check for closing tag
             if (*cur == '/') {
-                cur++;                
+                cur++;
                 // Skip to '>'
-                while (*cur && *cur != '>') cur++;
-                if (*cur == '>') cur++;
+                while (*cur && *cur != '>') {
+                    cur++;
+                }
+                if (*cur == '>') {
+                    cur++;
+                }
 
                 // Pop from stack
                 if (stack_depth > 0) {
@@ -65,8 +77,12 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
             } else if (*cur == '?' || *cur == '!') {
                 // Check for self-closing or processing instruction
                 // Skip processing instructions and comments
-                while (*cur && *cur != '>') cur++;
-                if (*cur == '>') cur++;
+                while (*cur && *cur != '>') {
+                    cur++;
+                }
+                if (*cur == '>') {
+                    cur++;
+                }
             } else {
                 // Opening tag
                 yyjson_mut_val* children_arr = get_children_array(doc, current);
@@ -84,12 +100,16 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
 
                 // Skip attributes (simple approach: skip to '>' or '/')
                 bool self_closing = false;
-                while (*cur && *cur != '>' && *cur != '/') cur++;
+                while (*cur && *cur != '>' && *cur != '/') {
+                    cur++;
+                }
                 if (*cur == '/') {
                     self_closing = true;
                     cur++;
                 }
-                if (*cur == '>') cur++;
+                if (*cur == '>') {
+                    cur++;
+                }
 
                 // Add to current
                 yyjson_mut_arr_append(children_arr, new_node);
@@ -106,7 +126,9 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
         } else {
             // Parse content
             char* start = cur;
-            while (*cur && *cur != OPEN_BRACKET) cur++;
+            while (*cur && *cur != OPEN_BRACKET) {
+                cur++;
+            }
             size_t len = cur - start;
             if (len > 0) {
                 yyjson_mut_val* children_arr = get_children_array(doc, current);

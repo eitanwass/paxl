@@ -1,3 +1,7 @@
+/**
+ * API for Paxl when compiling as standalone wasm
+ */
+
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -11,7 +15,12 @@ const { instance } = await WebAssembly.instantiate(data, {
   env: {}
 });
 
-// console.log(instance.exports);
+const {
+  parse: rawParse,
+  memory: wasmMemory,
+  malloc,
+  free
+} = instance.exports;
 
 const jsStringToCString = (str, memory, malloc) => {
     const encoded = new TextEncoder().encode(str);
@@ -36,15 +45,14 @@ const cStringToJs = (ptr, memory) => {
 }
 
 export const parse = (xml) => {
-  const inPtr = jsStringToCString(xml, instance.exports.memory, instance.exports.malloc);
+  const inPtr = jsStringToCString(xml, wasmMemory, malloc);
 
-  const outPtr = instance.exports.parse(inPtr);
-  // console.log(outPtr);
+  const outPtr = rawParse(inPtr);
+
+  const str = cStringToJs(outPtr, wasmMemory);
   
-  const str = cStringToJs(outPtr, instance.exports.memory);
-  // console.log(str);
-
-  instance.exports.free_json(outPtr);
+  free(inPtr);
+  free(outPtr);
 
   return str;
 }

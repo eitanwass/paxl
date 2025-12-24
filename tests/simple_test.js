@@ -1,8 +1,4 @@
-import {parse} from "./build/paxl.js"
-
-// const xml = `<root>${
-//     Array.from({length: 100}, (_, i) => `<item id="${i}"><name>item${i}</name><value>${i * 10}</value></item>`).join('')
-// }</root>`;
+import {parse} from "../build/paxl.js"
 
 console.log("output:");
 console.log(

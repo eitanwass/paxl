@@ -17,21 +17,26 @@ W_ENTRY ?= n
 STANDALONE ?= y
 
 EM_FLAGS :=
+EM_FLAGS += -sFILESYSTEM=0
+EM_FLAGS += -sASSERTIONS=0
+EM_FLAGS += -sSAFE_HEAP=0
+EM_FLAGS += -sSTACK_OVERFLOW_CHECK=0
+EM_FLAGS += -sSUPPORT_LONGJMP=0
+EM_FLAGS += -sERROR_ON_UNDEFINED_SYMBOLS=0
+
 
 CC_FLAGS := -flto -mnontrapping-fptoint
 # CC_FLAGS += -Ilibs/parson
 CC_FLAGS += -Ilibs/yyjson
 
-CC_FLAGS += -DYYJSON_DISABLE_READER=1
-CC_FLAGS += -DYYJSON_DISABLE_INCR_READER=1
+CC_FLAGS += -DYYJSON_DISABLE_READER
+CC_FLAGS += -DYYJSON_DISABLE_INCR_READER
 
 EXPORTS :=
 RUNTIME_EXPORTS :=
 
-# EXPORTS += parse free_json
-# -sEXPORTED_FUNCTIONS=$(FMT_EXPORTS) \
-
-RUNTIME_EXPORTS += stringToNewUTF8 UTF8ToString
+EXPORTS += malloc free
+# RUNTIME_EXPORTS += stringToNewUTF8 UTF8ToString
 
 FMT_EXPORTS := "[$(subst $(space),$(comma),$(foreach export,$(EXPORTS),'_$(export)'))]"
 FMT_RUNTIME_EXPORTS := "[$(subst $(space),$(comma),$(foreach export,$(RUNTIME_EXPORTS),'$(export)'))]"
@@ -43,6 +48,7 @@ else
 endif
 
 ifneq ($(W_ENTRY),y)
+	EM_FLAGS += -sINVOKE_RUN=0
 	CC_FLAGS += --no-entry
 endif
 
@@ -51,11 +57,9 @@ ifeq ($(STANDALONE),y)
 	CC_FLAGS += -DSTANDALONE
 endif
 
-# SRCS := $(shell find $(SRC_DIR) -name '*.c')
 SRCS :=
 SRCS += $(SRC_DIR)/core/xml.c
 SRCS += $(SRC_DIR)/core/parser.c
-# SRCS += $(LIBS_DIR)/parson/parson.c
 SRCS += $(LIBS_DIR)/yyjson/yyjson.c
 
 .PHONY: all format clean
@@ -64,7 +68,10 @@ all: $(BUILD_DIR)/$(OUT_NAME)
 
 $(BUILD_DIR)/$(OUT_NAME):
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(SRCS) $(CC_FLAGS) $(EM_FLAGS) \
+	$(CC) $(SRCS) \
+	$(CC_FLAGS) \
+	$(EM_FLAGS) \
+	-sEXPORTED_FUNCTIONS=$(FMT_EXPORTS) \
 	-sEXPORTED_RUNTIME_METHODS=$(FMT_RUNTIME_EXPORTS) \
 	-sEXPORT_ES6 \
 	-sMODULARIZE \
@@ -78,7 +85,7 @@ $(BUILD_DIR)/$(OUT_NAME):
 	fi
 
 format:
-	-clang-format -i --style=file ./src/**/*
+	-clang-format -i --style=file ./src/**/*.c
 
 clean:
 	-rm -rf $(BUILD_DIR)
