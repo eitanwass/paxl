@@ -14,7 +14,6 @@ OUT_NAME := paxl_core
 
 DEBUG ?= n
 W_ENTRY ?= n
-STANDALONE ?= y
 
 EM_FLAGS :=
 EM_FLAGS += -sFILESYSTEM=0
@@ -23,6 +22,7 @@ EM_FLAGS += -sSAFE_HEAP=0
 EM_FLAGS += -sSTACK_OVERFLOW_CHECK=0
 EM_FLAGS += -sSUPPORT_LONGJMP=0
 EM_FLAGS += -sERROR_ON_UNDEFINED_SYMBOLS=0
+EM_FLAGS += -sSTANDALONE_WASM
 
 
 CC_FLAGS := -flto -mnontrapping-fptoint
@@ -32,7 +32,7 @@ CC_FLAGS += -Ilibs/yyjson
 CC_FLAGS += -DYYJSON_DISABLE_READER
 CC_FLAGS += -DYYJSON_DISABLE_INCR_READER
 
-EXPORTS :=
+EXPORTS := 
 RUNTIME_EXPORTS :=
 
 EXPORTS += malloc free
@@ -50,11 +50,7 @@ endif
 ifneq ($(W_ENTRY),y)
 	EM_FLAGS += -sINVOKE_RUN=0
 	CC_FLAGS += --no-entry
-endif
-
-ifeq ($(STANDALONE),y)
-	EM_FLAGS += -sSTANDALONE_WASM
-	CC_FLAGS += -DSTANDALONE
+	CC_FLAGS += -DNO_ENTRY
 endif
 
 SRCS :=
@@ -78,11 +74,7 @@ $(BUILD_DIR)/$(OUT_NAME):
 	-sEXPORT_NAME=$(OUT_NAME) \
 	-o $@.js
 
-	@if [ "$(STANDALONE)" = "y" ]; then \
-		cp ./src/standalone_paxl.js $(BUILD_DIR)/paxl.js; \
-	else \
-		cp ./src/paxl.js $(BUILD_DIR)/paxl.js; \
-	fi
+	cp ./src/paxl_loader.js $(BUILD_DIR)/paxl.js; \
 
 format:
 	-clang-format -i --style=file ./src/**/*.c

@@ -33,26 +33,28 @@ const jsStringToCString = (str, memory, malloc) => {
     return ptr;
 }
 
-const cStringToJs = (ptr, memory) => {
-    const bytes = new Uint8Array(memory.buffer);
-    let end = ptr;
+const cStringToJs = (memory, resPtr) => {
+  const data_view = new DataView(memory.buffer, resPtr, 8);
 
-    // find null terminator
-    while (bytes[end] !== 0) end++;
+  const ptr = data_view.getUint32(0, true);
+  const len = data_view.getUint32(4, true);
 
-    // slice & decode
-    return new TextDecoder("utf-8").decode(bytes.subarray(ptr, end));
+  const res = new TextDecoder("utf-8").decode(new Uint8Array(memory.buffer, ptr, len));
+
+  free(ptr);
+
+  return res;
 }
 
-export const parse = (xml) => {
-  const inPtr = jsStringToCString(xml, wasmMemory, malloc);
+const parse = (xml) => {
+  const in_ptr = jsStringToCString(xml, wasmMemory, malloc);
 
-  const outPtr = rawParse(inPtr);
+  const resPtr = rawParse(in_ptr);
 
-  const str = cStringToJs(outPtr, wasmMemory);
+  const str = cStringToJs(wasmMemory, resPtr);
   
-  free(inPtr);
-  free(outPtr);
+  free(in_ptr);
+  free(resPtr);
 
   return str;
 }

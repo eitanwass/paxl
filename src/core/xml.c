@@ -1,6 +1,6 @@
-#ifndef STANDALONE
+#ifndef NO_ENTRY
 #include <stdio.h>
-#endif  // STANDALONE
+#endif  // NO_ENTRY
 
 #include <emscripten/emscripten.h>
 #include <stdlib.h>
@@ -8,9 +8,16 @@
 #include "parser.h"
 #include "yyjson.h"
 
+
+typedef struct _parse_res_t {
+    char* json_ptr;
+    size_t json_len;
+} parse_res;
+
+
 EMSCRIPTEN_KEEPALIVE
-char* parse(char* xml) {
-    char* json_str = NULL;
+parse_res* parse(char* xml) {
+    parse_res* res = (parse_res*)malloc(sizeof(parse_res));
     size_t json_len = 0;
     yyjson_mut_doc* doc = NULL;
     yyjson_mut_val* root = NULL;
@@ -24,23 +31,24 @@ char* parse(char* xml) {
 
     yyjson_mut_doc_set_root(doc, root);
 
-    // Parse XML into tree structure
     _parse_xml(doc, root, xml);
 
-    json_str = yyjson_mut_write(doc, 0, &json_len);
+    res->json_ptr = yyjson_mut_write(doc, 0, &res->json_len);
 
     yyjson_mut_doc_free(doc);
 
-    return json_str;
+    return res;
 }
 
-#ifndef STANDALONE
-int main() {
-    char* ptr = parse(
-        "<xml><child1>content1</child1><child2>content2</child2><emptyChild/><childNoContent></"
-        "childNoContent></xml>"
-    );
-    printf("%s\n", ptr);
-    free(ptr);
+
+#ifndef NO_ENTRY
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <xml>\n", argv[0]);
+        return -1;
+    }
+    parse_res* res = parse(argv[1]);
+    printf("%s\n", res->json_ptr);
+    free(res);
 }
-#endif  // STANDALONE
+#endif  // NO_ENTRY
