@@ -8,12 +8,14 @@ CC := emcc
 
 SRC_DIR := src
 LIBS_DIR := libs
-BUILD_DIR := build
+DIST_DIR := dist
 
 OUT_NAME := paxl_core
 
 DEBUG ?= n
 W_ENTRY ?= n
+
+MAX_XML_DEPTH ?= 256
 
 EM_FLAGS :=
 EM_FLAGS += -sFILESYSTEM=0
@@ -26,11 +28,11 @@ EM_FLAGS += -sSTANDALONE_WASM
 
 
 CC_FLAGS := -flto -mnontrapping-fptoint
-# CC_FLAGS += -Ilibs/parson
 CC_FLAGS += -Ilibs/yyjson
 
 CC_FLAGS += -DYYJSON_DISABLE_READER
 CC_FLAGS += -DYYJSON_DISABLE_INCR_READER
+CC_FLAGS += -DXML_DEPTH=$(MAX_XML_DEPTH)
 
 EXPORTS := 
 RUNTIME_EXPORTS :=
@@ -60,10 +62,10 @@ SRCS += $(LIBS_DIR)/yyjson/yyjson.c
 
 .PHONY: all format clean
 
-all: $(BUILD_DIR)/$(OUT_NAME)
+build: $(DIST_DIR)/$(OUT_NAME)
 
-$(BUILD_DIR)/$(OUT_NAME):
-	@mkdir -p $(BUILD_DIR)
+$(DIST_DIR)/$(OUT_NAME):
+	@mkdir -p $(DIST_DIR)
 	$(CC) $(SRCS) \
 	$(CC_FLAGS) \
 	$(EM_FLAGS) \
@@ -72,12 +74,10 @@ $(BUILD_DIR)/$(OUT_NAME):
 	-sEXPORT_ES6 \
 	-sMODULARIZE \
 	-sEXPORT_NAME=$(OUT_NAME) \
-	-o $@.js
-
-	cp ./src/paxl_loader.js $(BUILD_DIR)/paxl.js; \
+	-o $@.wasm
 
 format:
 	-clang-format -i --style=file ./src/**/*.c
 
 clean:
-	-rm -rf $(BUILD_DIR)
+	-rm -rf $(DIST_DIR)

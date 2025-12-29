@@ -9,7 +9,7 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const data = await readFile(join(__dirname, "./paxl_core.wasm"));
+const data = await readFile(join(__dirname, "./dist/paxl_core.wasm"));
 
 const { instance } = await WebAssembly.instantiate(data, {
   env: {}
@@ -63,7 +63,7 @@ const parse = (xml) => {
 // Due to how JS loads wasm modules, some code paths may be compiled at runtime.
 // Since we want the first run of `parse` to be as fast as can be, we will run a minimal XML here to pre-compile
 // the necessary code.
-// This will take longer in the import of the module but the actual parsing will be lightning speed.
+// This will take a little longer in the import of the module but the actual parsing will be lightning speed.
 parse("<xml x=1>a</xml>");
 
 export {parse};

@@ -8,12 +8,10 @@
 #include "parser.h"
 #include "yyjson.h"
 
-
 typedef struct _parse_res_t {
     char* json_ptr;
     size_t json_len;
 } parse_res;
-
 
 EMSCRIPTEN_KEEPALIVE
 parse_res* parse(char* xml) {
@@ -39,7 +37,6 @@ parse_res* parse(char* xml) {
 
     return res;
 }
-
 
 #ifndef NO_ENTRY
 int main(int argc, char* argv[]) {

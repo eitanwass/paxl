@@ -1,7 +1,7 @@
 import rapidx2j from "rapidx2j";
 import {parse} from "txml";
 
-import {parse as paxl_parse} from "../build/paxl.js";
+import {parse as paxl_parse} from "../dist/paxl.js";
 
 const testCases = [
     {

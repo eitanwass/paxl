@@ -1,23 +1,26 @@
 {
   "name": "paxl",
   "version": "1.0.0",
-  "main": "test.js",
+  "description": "",
+  "author": "Ethan Wass <eitanwass@gmail.com>",
+  "type": "module",
+  "license": "ISC",
+  "main": "./paxl.js",
+  "files": [
+    "dist/",
+    "paxl.js"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "make build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eitanwass/paxl.git"
   },
-  "author": "",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/eitanwass/paxl/issues"
   },
   "homepage": "https://github.com/eitanwass/paxl#readme",
-  "description": "",
-  "dependencies": {
-    "rapidx2j": "^0.7.1",
-    "txml": "^5.2.1"
-  }
+  "engines": { "node": ">=12.22.7" },
+  "dependencies": { }
 }

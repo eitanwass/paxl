@@ -1,19 +1,10 @@
 #include "parser.h"
 
-#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define STACK_SIZE 256
-
-// Helper: Skip whitespace
-static inline char* skip_ws(char* p) {
-    while (*p && isspace(*p)) {
-        p++;
-    }
-    return p;
-}
+#include "helpers.h"
 
 // Helper: Parse tag name, return pointer after tag name
 static char* parse_tag_name(char* start, char** name_out, size_t* len_out) {
@@ -42,7 +33,7 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
     }
 
     // Stack for tracking open nodes during parsing
-    yyjson_mut_val* stack[STACK_SIZE] = {NULL};
+    yyjson_mut_val* stack[XML_DEPTH] = {NULL};
     size_t stack_depth = 0;
 
     yyjson_mut_val* current = root;
@@ -62,10 +53,10 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
             if (*cur == '/') {
                 cur++;
                 // Skip to '>'
-                while (*cur && *cur != '>') {
+                while (*cur && *cur != CLOSE_BRACKET) {
                     cur++;
                 }
-                if (*cur == '>') {
+                if (*cur == CLOSE_BRACKET) {
                     cur++;
                 }
 
@@ -77,10 +68,10 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
             } else if (*cur == '?' || *cur == '!') {
                 // Check for self-closing or processing instruction
                 // Skip processing instructions and comments
-                while (*cur && *cur != '>') {
+                while (*cur && *cur != CLOSE_BRACKET) {
                     cur++;
                 }
-                if (*cur == '>') {
+                if (*cur == CLOSE_BRACKET) {
                     cur++;
                 }
             } else {
@@ -100,7 +91,7 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
 
                 // Skip attributes (simple approach: skip to '>' or '/')
                 bool self_closing = false;
-                while (*cur && *cur != '>' && *cur != '/') {
+                while (*cur && *cur != CLOSE_BRACKET && *cur != '/') {
                     cur++;
                 }
                 if (*cur == '/') {
@@ -116,7 +107,7 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
 
                 // Push to stack if not self-closing
                 if (!self_closing) {
-                    if (stack_depth < STACK_SIZE) {
+                    if (stack_depth < sizeof(stack)) {
                         stack[stack_depth] = current;
                         stack_depth++;
                         current = new_node;
