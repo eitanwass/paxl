@@ -91,3 +91,5 @@ for (const testCase of testCases) {
     console.log(`  Speedup vs rapidx2j:  ${(rapidx2j_avg / paxl_avg).toFixed(2)}x faster`);
     console.log(`  Speedup vs txml:      ${(txml_avg / paxl_avg).toFixed(2)}x faster`);
 }
+
+console.log(JSON.stringify(JSON.parse(paxl_parse(testCases[4].xml)), null, 2));

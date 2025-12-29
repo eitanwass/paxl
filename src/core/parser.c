@@ -87,13 +87,47 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
 
                 yyjson_mut_obj_add_strn(doc, new_node, "tagName", node_name, node_name_len);
 
-                // TODO: Parse attributes
-
-                // Skip attributes (simple approach: skip to '>' or '/')
-                bool self_closing = false;
+                // Parse attributes
                 while (*cur && *cur != CLOSE_BRACKET && *cur != '/') {
-                    cur++;
+                    cur = skip_ws(cur);
+                    if (*cur == CLOSE_BRACKET || *cur == '/') break;
+
+                    // parse attribute name
+                    char* attr_name_start = cur;
+                    while (*cur && *cur != '=' && !isspace(*cur)) cur++;
+                    size_t attr_name_len = cur - attr_name_start;
+
+                    // skip ws and =
+                    cur = skip_ws(cur);
+                    if (*cur == '=') {
+                        cur++;
+                        cur = skip_ws(cur);
+                    }
+
+                    // parse value
+                    if (*cur == '"' || *cur == '\'') {
+                        char quote = *cur;
+                        cur++;
+                        char* attr_value_start = cur;
+                        while (*cur && *cur != quote) cur++;
+                        size_t attr_value_len = cur - attr_value_start;
+                        if (*cur == quote) cur++;
+                        // add attribute
+                        yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
+                        yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
+                        yyjson_mut_obj_add(new_node, attr_key, attr_val);
+                    } else {
+                        // unquoted value
+                        char* attr_value_start = cur;
+                        while (*cur && *cur != CLOSE_BRACKET && *cur != '/' && !isspace(*cur)) cur++;
+                        size_t attr_value_len = cur - attr_value_start;
+                        yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
+                        yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
+                        yyjson_mut_obj_add(new_node, attr_key, attr_val);
+                    }
                 }
+
+                bool self_closing = false;
                 if (*cur == '/') {
                     self_closing = true;
                     cur++;
