@@ -4,6 +4,8 @@ A high-performance XML to JSON parser implemented in WebAssembly.
 
 Paxl parses XML documents and converts them into JSON objects with minimal overhead. It's designed for speed and efficiency, making it ideal for processing large XML files or high-throughput applications.
 
+<img width="799" height="478" alt="image" src="https://github.com/user-attachments/assets/364bd7d2-423a-46da-8ce7-b9d0a5f6d358" />
+
 ## Features
 
 - **Fast**: Optimized C code compiled to WebAssembly for maximum performance
