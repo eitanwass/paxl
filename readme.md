@@ -138,7 +138,7 @@ XSD Validation is not planned!
 
 ## License
 
-ISC License - see the package.json for details.
+Apache 2.0 license - see LICENSE file for details.
 
 ## Credits
 
