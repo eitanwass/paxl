@@ -2,10 +2,12 @@
 #include <stdio.h>
 #endif  // NO_ENTRY
 
+#ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
+#endif
 #include <stdlib.h>
 
-#include "parser.h"
+#include "core/parser.h"
 #include "yyjson.h"
 
 typedef struct _parse_res_t {
@@ -13,7 +15,9 @@ typedef struct _parse_res_t {
     size_t json_len;
 } parse_res;
 
+#ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
+#endif
 parse_res* parse(char* xml) {
     parse_res* res = (parse_res*)malloc(sizeof(parse_res));
     size_t json_len = 0;
@@ -31,7 +35,7 @@ parse_res* parse(char* xml) {
 
     _parse_xml(doc, root, xml);
 
-    res->json_ptr = yyjson_mut_write(doc, 0, &res->json_len);
+    res->json_ptr = yyjson_mut_write(doc, YYJSON_WRITE_ALLOW_INVALID_UNICODE, &res->json_len);
 
     yyjson_mut_doc_free(doc);
 

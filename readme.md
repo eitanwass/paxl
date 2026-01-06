@@ -31,14 +31,14 @@ const xml = `<root>
 
 const json = parse(xml);
 console.log(json);
-// Output: {"children":[{"name":"item","attributes":{"id":"1"},"children":[{"name":"name","children":["Example"]},{"name":"value","children":["42"]}]}]}
+// Output: {"children":[{"tagName":"item","attributes":{"id":"1"},"children":[{"tagName":"name","children":["Example"]},{"tagName":"value","children":["42"]}]}]}
 ```
 
 ## JSON Output Format
 
 Paxl converts XML to a JSON structure where:
 
-- Elements become objects with a `name` property and optional `attributes` and `children` properties
+- Elements become objects with a `tagName` property and optional `attributes` and `children` properties
 - Text content is represented as strings in the `children` array
 - Attributes are collected in an `attributes` object
 - Nested elements are placed in the `children` array
@@ -58,18 +58,18 @@ Becomes:
 {
   "children": [
     {
-      "name": "book",
+      "tagName": "book",
       "attributes": {
         "id": "123",
         "category": "fiction"
       },
       "children": [
         {
-          "name": "title",
+          "tagName": "title",
           "children": ["Sample Book"]
         },
         {
-          "name": "author",
+          "tagName": "author",
           "children": ["John Doe"]
         }
       ]

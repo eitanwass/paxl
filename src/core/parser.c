@@ -5,17 +5,8 @@
 #include <string.h>
 
 #include "helpers.h"
-
-// Helper: Parse tag name, return pointer after tag name
-static char* parse_tag_name(char* start, char** name_out, size_t* len_out) {
-    char* p = start;
-    while (*p && *p != '>' && *p != '/' && !isspace(*p)) {
-        p++;
-    }
-    *len_out = p - start;
-    *name_out = start;
-    return p;
-}
+#include "parsers/comment_parser.h"
+#include "parsers/tag_name_parser.h"
 
 // Helper: Get or create children array
 static yyjson_mut_val* get_children_array(yyjson_mut_doc* doc, yyjson_mut_val* obj) {
@@ -32,6 +23,9 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
         return;
     }
 
+    yyjson_mut_val* children_arr = NULL;
+    yyjson_mut_val* new_node = NULL;
+
     // Stack for tracking open nodes during parsing
     yyjson_mut_val* stack[XML_DEPTH] = {NULL};
     size_t stack_depth = 0;
@@ -40,6 +34,9 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
 
     char* cur = xml;
 
+    char* node_name = NULL;
+    size_t node_name_len = 0;
+
     while (cur && *cur) {
         cur = skip_ws(cur);
         if (!*cur) {
@@ -47,106 +44,61 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
         }
 
         if (*cur == OPEN_BRACKET) {
+            bool is_self_closing = false;
+
             cur++;
 
-            // Check for closing tag
-            if (*cur == '/') {
-                cur++;
-                // Skip to '>'
-                while (*cur && *cur != CLOSE_BRACKET) {
+            switch(*cur) {
+                case '/':
+                    // Closing Tag
                     cur++;
-                }
-                if (*cur == CLOSE_BRACKET) {
-                    cur++;
-                }
+                    skip_to_tag_end(cur);
 
-                // Pop from stack
-                if (stack_depth > 0) {
-                    stack_depth--;
-                    current = stack[stack_depth];
-                }
-            } else if (*cur == '?' || *cur == '!') {
-                // Check for self-closing or processing instruction
-                // Skip processing instructions and comments
-                while (*cur && *cur != CLOSE_BRACKET) {
-                    cur++;
-                }
-                if (*cur == CLOSE_BRACKET) {
-                    cur++;
-                }
-            } else {
-                // Opening tag
-                yyjson_mut_val* children_arr = get_children_array(doc, current);
+                    // Pop from stack
+                    if (stack_depth > 0) {
+                        stack_depth--;
+                        current = stack[stack_depth];
+                    }
+                    break;
+                case '?':
+                    // Processing instruction - ignore for now
+                    skip_to_tag_end(cur);
+                    break;
+                case '!':
+                    // Comment
+                    parse_comment(cur);
+                    skip_to_tag_end(cur);
+                    break;
+                default:
+                    // Opening tag
+                    children_arr = get_children_array(doc, current);
+                    new_node = yyjson_mut_obj(doc);
+                    is_self_closing = false;
 
-                yyjson_mut_val* new_node = yyjson_mut_obj(doc);
+                    node_name = cur;
+                    cur = parse_tag_name(cur, &node_name_len);
+                    yyjson_mut_obj_add_strn(doc, new_node, "tagName", node_name, node_name_len);
+    
+                    // Add to child list
+                    yyjson_mut_arr_append(children_arr, new_node);
 
-                char* node_name = NULL;
-                size_t node_name_len = 0;
-
-                cur = parse_tag_name(cur, &node_name, &node_name_len);
-
-                yyjson_mut_obj_add_strn(doc, new_node, "tagName", node_name, node_name_len);
-
-                // Parse attributes
-                while (*cur && *cur != CLOSE_BRACKET && *cur != '/') {
-                    cur = skip_ws(cur);
-                    if (*cur == CLOSE_BRACKET || *cur == '/') break;
-
-                    // parse attribute name
-                    char* attr_name_start = cur;
-                    while (*cur && *cur != '=' && !isspace(*cur)) cur++;
-                    size_t attr_name_len = cur - attr_name_start;
-
-                    // skip ws and =
-                    cur = skip_ws(cur);
-                    if (*cur == '=') {
+                    if (*cur == '/') {
+                       is_self_closing = true;
                         cur++;
-                        cur = skip_ws(cur);
                     }
-
-                    // parse value
-                    if (*cur == '"' || *cur == '\'') {
-                        char quote = *cur;
+                    if (*cur == '>') {
                         cur++;
-                        char* attr_value_start = cur;
-                        while (*cur && *cur != quote) cur++;
-                        size_t attr_value_len = cur - attr_value_start;
-                        if (*cur == quote) cur++;
-                        // add attribute
-                        yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
-                        yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
-                        yyjson_mut_obj_add(new_node, attr_key, attr_val);
-                    } else {
-                        // unquoted value
-                        char* attr_value_start = cur;
-                        while (*cur && *cur != CLOSE_BRACKET && *cur != '/' && !isspace(*cur)) cur++;
-                        size_t attr_value_len = cur - attr_value_start;
-                        yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
-                        yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
-                        yyjson_mut_obj_add(new_node, attr_key, attr_val);
                     }
-                }
-
-                bool self_closing = false;
-                if (*cur == '/') {
-                    self_closing = true;
-                    cur++;
-                }
-                if (*cur == '>') {
-                    cur++;
-                }
-
-                // Add to current
-                yyjson_mut_arr_append(children_arr, new_node);
-
-                // Push to stack if not self-closing
-                if (!self_closing) {
-                    if (stack_depth < sizeof(stack)) {
-                        stack[stack_depth] = current;
-                        stack_depth++;
-                        current = new_node;
+                    // Push to stack if not self-closing
+                    if (!is_self_closing) {
+                        if (stack_depth < sizeof(stack)) {
+                            stack[stack_depth] = current;
+                            stack_depth++;
+                            current = new_node;
+                        }
                     }
-                }
+
+                    break;
             }
         } else {
             // Parse content
@@ -156,7 +108,7 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
             }
             size_t len = cur - start;
             if (len > 0) {
-                yyjson_mut_val* children_arr = get_children_array(doc, current);
+                children_arr = get_children_array(doc, current);
 
                 yyjson_mut_arr_add_strn(doc, children_arr, start, len);
             }

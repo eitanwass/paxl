@@ -9,9 +9,6 @@
 #define XML_DEPTH (256)
 #endif  // XML_DEPTH
 
-#define OPEN_BRACKET '<'
-#define CLOSE_BRACKET '>'
-
 #define CHILDREN_FIELD_NAME "children"
 
 // void _parse_xml(JSON_Object* root, char* xml);

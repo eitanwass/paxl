@@ -15,6 +15,8 @@ const { instance } = await WebAssembly.instantiate(data, {
   env: {}
 });
 
+const textDecoder = new TextDecoder("utf-8");
+
 const {
   parse: rawParse,
   memory: wasmMemory,
@@ -39,7 +41,7 @@ const cStringToJs = (memory, resPtr) => {
   const ptr = data_view.getUint32(0, true);
   const len = data_view.getUint32(4, true);
 
-  const res = new TextDecoder("utf-8").decode(new Uint8Array(memory.buffer, ptr, len));
+  const res = textDecoder.decode(new Uint8Array(memory.buffer, ptr, len));
 
   free(ptr);
 
