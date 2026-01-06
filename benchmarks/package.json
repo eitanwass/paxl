@@ -1,0 +1,17 @@
+{
+  "name": "benchmarks",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node ./benchmarks"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "benchmark": "^2.1.4",
+    "rapidx2j": "^0.7.1",
+    "txml": "^5.2.1"
+  }
+}

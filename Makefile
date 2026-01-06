@@ -7,6 +7,9 @@ all: build
 
 build: $(DIST_DIR)/$(OUT_NAME)
 
+benchmark:
+	npm run test -C ./benchmarks
+
 format:
 	@clang-format -i --style=file ./src/**/*.c
 
