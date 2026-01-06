@@ -119,6 +119,23 @@ node tests/simple_test.js
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
+## Roadmap
+XSD Validation is not planned!
+
+- [ ] Valgrind tests!
+- [ ] Non-string attributes
+- [ ] Online performance or/and demo
+- [ ] Remove yyjson for smaller in-house implementation (unused features)
+- Options:
+  - [ ] Single root option - eliminate top "children" element
+  - [ ] Parse comments
+  - [ ] Custom keys (e.g. tagName -> my_tag_name)
+- [ ] Data validations? (Do we want that? Hit for performance)
+  - [ ] Parse boolean values to correct form (e.g. False -> false)
+- [ ] Performance
+  - [ ] Parallel pass parsing
+  - [ ] SIMD? (Is it even applicable in this case?)
+
 ## License
 
 ISC License - see the package.json for details.

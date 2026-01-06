@@ -8,7 +8,7 @@ all: build
 build: $(DIST_DIR)/$(OUT_NAME)
 
 format:
-	-clang-format -i --style=file ./src/**/*.c
+	@clang-format -i --style=file ./src/**/*.c
 
 clean:
 	@rm -rf $(DIST_DIR)

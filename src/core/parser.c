@@ -52,7 +52,7 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
                 case '/':
                     // Closing Tag
                     cur++;
-                    skip_to_tag_end(cur);
+                    cur = skip_to_tag_end(cur);
 
                     // Pop from stack
                     if (stack_depth > 0) {
@@ -62,12 +62,12 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
                     break;
                 case '?':
                     // Processing instruction - ignore for now
-                    skip_to_tag_end(cur);
+                    cur = skip_to_tag_end(cur);
                     break;
                 case '!':
                     // Comment
                     parse_comment(cur);
-                    skip_to_tag_end(cur);
+                    cur = skip_to_tag_end(cur);
                     break;
                 default:
                     // Opening tag
@@ -81,6 +81,46 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
     
                     // Add to child list
                     yyjson_mut_arr_append(children_arr, new_node);
+
+                    // Parse attributes
+                    while (*cur && *cur != CLOSE_BRACKET && *cur != '/') {
+                        cur = skip_ws(cur);
+                        if (*cur == CLOSE_BRACKET || *cur == '/') break;
+
+                        // parse attribute name
+                        char* attr_name_start = cur;
+                        while (*cur && *cur != '=' && !isspace(*cur)) cur++;
+                        size_t attr_name_len = cur - attr_name_start;
+
+                        // skip ws and =
+                        cur = skip_ws(cur);
+                        if (*cur == '=') {
+                            cur++;
+                            cur = skip_ws(cur);
+                        }
+
+                        // parse value
+                        if (*cur == '"' || *cur == '\'') {
+                            char quote = *cur;
+                            cur++;
+                            char* attr_value_start = cur;
+                            while (*cur && *cur != quote) cur++;
+                            size_t attr_value_len = cur - attr_value_start;
+                            if (*cur == quote) cur++;
+                            // add attribute
+                            yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
+                            yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
+                            yyjson_mut_obj_add(new_node, attr_key, attr_val);
+                        } else {
+                            // unquoted value
+                            char* attr_value_start = cur;
+                            while (*cur && *cur != CLOSE_BRACKET && *cur != '/' && !isspace(*cur)) cur++;
+                            size_t attr_value_len = cur - attr_value_start;
+                            yyjson_mut_val* attr_key = yyjson_mut_strn(doc, attr_name_start, attr_name_len);
+                            yyjson_mut_val* attr_val = yyjson_mut_strn(doc, attr_value_start, attr_value_len);
+                            yyjson_mut_obj_add(new_node, attr_key, attr_val);
+                        }
+                    }
 
                     if (*cur == '/') {
                        is_self_closing = true;
@@ -103,10 +143,16 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
         } else {
             // Parse content
             char* start = cur;
+            char* end = cur;
+            size_t len = 0;
             while (*cur && *cur != OPEN_BRACKET) {
                 cur++;
             }
-            size_t len = cur - start;
+            end = cur;
+            while (end > start && isspace(*(end-1))) {
+                end--;
+            }
+            len = end - start;
             if (len > 0) {
                 children_arr = get_children_array(doc, current);
 
