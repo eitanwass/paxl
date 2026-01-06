@@ -123,9 +123,15 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## Roadmap
 XSD Validation is not planned!
+Roadmap of features and support I want to implement, in no particular order.
 
+- CI/CD
+  - [ ] CI run tests (actually write them this time)
+  - [ ] CD Distributed build
+- Tests
+  - [ ] Valgrind tests!
+  - [ ] Reach 100% coverage!
 - [ ] typescript support!
-- [ ] Valgrind tests!
 - [ ] Non-string attributes
 - [ ] Online performance or/and demo
 - [ ] Remove yyjson for smaller in-house implementation (unused features)
@@ -133,9 +139,9 @@ XSD Validation is not planned!
   - [ ] Single root option - eliminate top "children" element
   - [ ] Parse comments
   - [ ] Custom keys (e.g. tagName -> my_tag_name)
-- [ ] Data validations? (Do we want that? Hit for performance)
+- Data validations? (Do we want that? Hit for performance)
   - [ ] Parse boolean values to correct form (e.g. False -> false)
-- [ ] Performance
+- Performance
   - [ ] Parallel pass parsing
   - [ ] SIMD? (Is it even applicable in this case?)
 
