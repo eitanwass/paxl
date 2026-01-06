@@ -124,6 +124,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## Roadmap
 XSD Validation is not planned!
 
+- [ ] typescript support!
 - [ ] Valgrind tests!
 - [ ] Non-string attributes
 - [ ] Online performance or/and demo
