@@ -10,10 +10,7 @@
 #include "core/parser.h"
 #include "yyjson.h"
 
-typedef struct _parse_res_t {
-    char* json_ptr;
-    size_t json_len;
-} parse_res;
+#include "xml.h"
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
