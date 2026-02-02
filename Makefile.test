@@ -1,47 +1,15 @@
-.PHONY: test test-run test-helpers test-parser test-xml test-comment-parser test-tag-name-parser
 
-test:
-	@if [ -f $(DIST_DIR)/$(OUT_NAME).wasm ]; then \
-		echo "Build exists. Re-compile? (y/n)"; \
-		read answer; \
-		if [ "$$answer" = "y" ]; then \
-			$(MAKE) clean; \
-			$(MAKE) build; \
-		fi; \
-	else \
-		$(MAKE) build; \
-	fi; \
-	$(MAKE) test-run
+TEST_SRCS := $(wildcard $(TEST_DIR)/test_*.c)
+TEST_TARGETS := $(patsubst $(TEST_DIR)/test_%.c,test_%, $(TEST_SRCS))
 
-test-run: test-helpers test-parser test-xml test-comment-parser test-tag-name-parser
+.PHONY: test
+
+test: $(TEST_TARGETS)
 	@echo "All tests passed!"
 
-test-helpers: $(TEST_DIR)/test_helpers
-	./$(TEST_DIR)/test_helpers
+# Run target for each test source: depends on the built executable then runs it
+test_%: $(TEST_DIR)/test_%
+	./$(TEST_DIR)/test_$*
 
-test-parser: $(TEST_DIR)/test_parser
-	./$(TEST_DIR)/test_parser
-
-test-xml: $(TEST_DIR)/test_xml
-	./$(TEST_DIR)/test_xml
-
-test-comment-parser: $(TEST_DIR)/test_comment_parser
-	./$(TEST_DIR)/test_comment_parser
-
-test-tag-name-parser: $(TEST_DIR)/test_tag_name_parser
-	./$(TEST_DIR)/test_tag_name_parser
-
-$(TEST_DIR)/test_helpers: $(TEST_DIR)/test_helpers.c $(TEST_DIR)/unity.c
-	$(CC_NATIVE) $(TEST_CC_FLAGS) $^ -o $@
-
-$(TEST_DIR)/test_parser: $(TEST_DIR)/test_parser.c $(TEST_DIR)/unity.c $(SRC_DIR)/core/parser.c $(SRC_DIR)/parsers/comment_parser.c $(LIBS_DIR)/yyjson/yyjson.c
-	$(CC_NATIVE) $(TEST_CC_FLAGS) $^ -o $@
-
-$(TEST_DIR)/test_xml: $(TEST_DIR)/test_xml.c $(TEST_DIR)/unity.c $(SRC_DIR)/xml.c $(SRC_DIR)/core/parser.c $(SRC_DIR)/parsers/comment_parser.c $(LIBS_DIR)/yyjson/yyjson.c
-	$(CC_NATIVE) $(TEST_CC_FLAGS) $^ -o $@
-
-$(TEST_DIR)/test_comment_parser: $(TEST_DIR)/test_comment_parser.c $(TEST_DIR)/unity.c $(SRC_DIR)/parsers/comment_parser.c
-	$(CC_NATIVE) $(TEST_CC_FLAGS) $^ -o $@
-
-$(TEST_DIR)/test_tag_name_parser: $(TEST_DIR)/test_tag_name_parser.c $(TEST_DIR)/unity.c
-	$(CC_NATIVE) $(TEST_CC_FLAGS) $^ -o $@
+$(TEST_DIR)/test_%: $(SRCS) $(TEST_DIR)/unity.c 
+	$(CC_NATIVE) $(TEST_CC_FLAGS) $^  $(TEST_DIR)/test_$*.c -o $@
