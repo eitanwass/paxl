@@ -5,7 +5,19 @@ TEST_TARGETS := $(patsubst $(TEST_DIR)/test_%.c,test_%, $(TEST_SRCS))
 .PHONY: test
 
 test: $(TEST_TARGETS)
-	@echo "All tests passed!"
+	@total_tests=0; total_failures=0; total_ignored=0; \
+	for exe in $(TEST_TARGETS); do \
+		output=$$(./$(TEST_DIR)/$$exe 2>&1); \
+		echo "$$output"; \
+		tests=$$(echo "$$output" | grep -o '[0-9]* Tests' | head -1 | sed 's/ Tests//' || echo 0); \
+		failures=$$(echo "$$output" | grep -o '[0-9]* Failures' | head -1 | sed 's/ Failures//' || echo 0); \
+		ignored=$$(echo "$$output" | grep -o '[0-9]* Ignored' | head -1 | sed 's/ Ignored//' || echo 0); \
+		total_tests=$$((total_tests + tests)); \
+		total_failures=$$((total_failures + failures)); \
+		total_ignored=$$((total_ignored + ignored)); \
+	done; \
+	echo "Total: $$total_tests Tests $$total_failures Failures $$total_ignored Ignored"; \
+	if [ $$total_failures -eq 0 ]; then echo "All tests passed!"; else echo "Some tests failed!"; fi
 
 # Run target for each test source: depends on the built executable then runs it
 test_%: $(TEST_DIR)/test_%
