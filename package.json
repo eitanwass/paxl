@@ -5,12 +5,12 @@
   "author": "Ethan Wass <eitanwass@gmail.com>",
   "type": "module",
   "license": "ISC",
-  "main": "./paxl.js",
+  "main": "./dist/paxl.js",
+  "types": "./dist/paxl.d.ts",
   "files": [
     "LICENSE",
-    "LICENSE.emscripten",
-    "dist/",
-    "paxl.js"
+    "third_party_licenses/",
+    "dist/"
   ],
   "scripts": {
     "build": "make build"
@@ -25,5 +25,9 @@
   "homepage": "https://github.com/eitanwass/paxl#readme",
   "engines": {
     "node": ">=12.22.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -131,7 +131,7 @@ Roadmap of features and support I want to implement, in no particular order.
 - Tests
   - [ ] Valgrind tests!
   - [ ] Reach 100% coverage!
-- [ ] typescript support!
+- [x] typescript support!
 - [ ] Non-string attributes
 - [ ] Online performance or/and demo
 - [ ] Remove yyjson for smaller in-house implementation (unused features)

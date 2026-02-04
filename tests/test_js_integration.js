@@ -1,4 +1,4 @@
-import { parse } from "../paxl.js"
+import { parse } from "../dist/paxl.js"
 
 const sample_xml = `
 <root id="first">
