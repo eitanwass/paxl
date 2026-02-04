@@ -1,11 +1,14 @@
 include Makefile.common
 include Makefile.test
 
-.PHONY: all format clean
+.PHONY: all build benchmark format clean
+.DEFAULT_GOAL := all
 
 all: build
 
 build: $(DIST_DIR)/$(OUT_NAME)
+	npx tsc
+	npm pack
 
 benchmark:
 	npm run test -C ./benchmarks

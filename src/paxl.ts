@@ -9,11 +9,18 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const data = await readFile(join(__dirname, "./dist/paxl_core.wasm"));
+const data = await readFile(join(__dirname, "./paxl_core.wasm"));
 
 const { instance } = await WebAssembly.instantiate(data, {
   env: {}
 });
+
+type instanceExports = {
+  parse: (xml_ptr: number) => number;
+  memory: WebAssembly.Memory;
+  malloc: (mem_len: number) => number;
+  free: (ptr: number) => void;
+};
 
 const textDecoder = new TextDecoder("utf-8");
 
@@ -22,9 +29,9 @@ const {
   memory: wasmMemory,
   malloc,
   free
-} = instance.exports;
+ } = instance.exports as instanceExports;
 
-const jsStringToCString = (str, memory, malloc) => {
+const jsStringToCString = (str: string, memory: WebAssembly.Memory, malloc: (arg0: number) => number) => {
     const encoded = new TextEncoder().encode(str);
     const ptr = malloc(encoded.length + 1);
 
@@ -35,7 +42,7 @@ const jsStringToCString = (str, memory, malloc) => {
     return ptr;
 }
 
-const cStringToJs = (memory, resPtr) => {
+const cStringToJs = (memory: WebAssembly.Memory, resPtr: number) => {
   const data_view = new DataView(memory.buffer, resPtr, 8);
 
   const ptr = data_view.getUint32(0, true);
@@ -48,7 +55,7 @@ const cStringToJs = (memory, resPtr) => {
   return res;
 }
 
-const parse = (xml) => {
+const parse = (xml: string): string => {
   const in_ptr = jsStringToCString(xml, wasmMemory, malloc);
 
   const resPtr = rawParse(in_ptr);
