@@ -1,6 +1,6 @@
 import Benchmark from 'benchmark';
 
-import { parse as paxlParse } from '../paxl.js';
+import { parse as paxlParse } from '../dist/paxl.js';
 import rapidx2j from "rapidx2j";
 import {parse} from "txml";
 
