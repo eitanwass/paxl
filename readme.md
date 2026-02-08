@@ -126,7 +126,7 @@ XSD Validation is not planned!
 Roadmap of features and support I want to implement, in no particular order.
 
 - CI/CD
-  - [ ] CI run tests (actually write them this time)
+  - [x] CI run tests (actually write them this time)
   - [ ] CD Distributed build
 - Tests
   - [ ] Valgrind tests!

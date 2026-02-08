@@ -8,6 +8,7 @@ on:
       - opened
       - reopened
       - edited
+      - synchronize
 
 jobs:
   build:
@@ -16,9 +17,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Setup Emscripten toolchain
+      uses: mymindstorm/setup-emsdk@v14 
+      with:
+        version: 'latest'
+
+    - name: Verify emcc installation
+      run: emcc --version
+
     - name: Install Dependencies
       run: npm install
+
     - name: build
       run: make build
+
     - name: test
       run: make test
