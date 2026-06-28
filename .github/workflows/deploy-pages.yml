@@ -1,0 +1,62 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; let in-flight ones finish rather than
+# racing a half-deployed site.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Emscripten toolchain
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: 'latest'
+
+    - name: Verify emcc installation
+      run: emcc --version
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Test
+      run: make test
+
+    # Rebuilds paxl_core.wasm from src/*.c and compiles src/paxl-browser.ts,
+    # then copies both into docs/ - the demo always ships the binary this
+    # commit actually produces, never a stale hand-copied one.
+    - name: Build wasm + browser bundle and sync into docs/
+      run: make docs
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+
+    - name: Upload docs/ as Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
