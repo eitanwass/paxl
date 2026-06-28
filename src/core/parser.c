@@ -8,13 +8,17 @@
 #include "parsers/comment_parser.h"
 #include "parsers/tag_name_parser.h"
 
-// Helper: Get or create children array
-static yyjson_mut_val* get_children_array(yyjson_mut_doc* doc, yyjson_mut_val* obj) {
-    yyjson_mut_val* arr = yyjson_mut_obj_get(obj, CHILDREN_FIELD_NAME);
-    if (!arr) {
-        arr = yyjson_mut_obj_add_arr(doc, obj, CHILDREN_FIELD_NAME);
+// Helper: get an object's cached children array, creating it on first use.
+// `cached` mirrors whatever's already on `obj` (NULL means "not created
+// yet", not "known empty") so this never has to ask yyjson to look it up -
+// yyjson_mut_obj_get() would otherwise rescan every existing key (tagName +
+// each attribute) on *every* child/text node appended, not just the first.
+static inline yyjson_mut_val* ensure_children_array(yyjson_mut_doc* doc, yyjson_mut_val* obj,
+                                                      yyjson_mut_val** cached) {
+    if (!*cached) {
+        *cached = yyjson_mut_obj_add_arr(doc, obj, CHILDREN_FIELD_NAME);
     }
-    return arr;
+    return *cached;
 }
 
 // void _parse_xml(JSON_Object* root, char* xml) {
@@ -23,14 +27,16 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
         return;
     }
 
-    yyjson_mut_val* children_arr = NULL;
     yyjson_mut_val* new_node = NULL;
 
-    // Stack for tracking open nodes during parsing
-    yyjson_mut_val* stack[XML_DEPTH] = {NULL};
+    // Parallel stacks: stack_nodes tracks open elements, stack_children caches
+    // each one's children array (see ensure_children_array) across pushes/pops.
+    yyjson_mut_val* stack_nodes[XML_DEPTH] = {NULL};
+    yyjson_mut_val* stack_children[XML_DEPTH] = {NULL};
     size_t stack_depth = 0;
 
     yyjson_mut_val* current = root;
+    yyjson_mut_val* current_children = NULL;
 
     char* cur = xml;
 
@@ -57,7 +63,8 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
                     // Pop from stack
                     if (stack_depth > 0) {
                         stack_depth--;
-                        current = stack[stack_depth];
+                        current = stack_nodes[stack_depth];
+                        current_children = stack_children[stack_depth];
                     }
                     break;
                 case '?':
@@ -71,16 +78,16 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
                     break;
                 default:
                     // Opening tag
-                    children_arr = get_children_array(doc, current);
+                    ensure_children_array(doc, current, &current_children);
                     new_node = yyjson_mut_obj(doc);
                     is_self_closing = false;
 
                     node_name = cur;
                     cur = parse_tag_name(cur, &node_name_len);
                     yyjson_mut_obj_add_strn(doc, new_node, "tagName", node_name, node_name_len);
-    
+
                     // Add to child list
-                    yyjson_mut_arr_append(children_arr, new_node);
+                    yyjson_mut_arr_append(current_children, new_node);
 
                     // Parse attributes
                     while (*cur && *cur != CLOSE_BRACKET && *cur != '/') {
@@ -131,10 +138,12 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
                     }
                     // Push to stack if not self-closing
                     if (!is_self_closing) {
-                        if (stack_depth < sizeof(stack)) {
-                            stack[stack_depth] = current;
+                        if (stack_depth < sizeof(stack_nodes) / sizeof(stack_nodes[0])) {
+                            stack_nodes[stack_depth] = current;
+                            stack_children[stack_depth] = current_children;
                             stack_depth++;
                             current = new_node;
+                            current_children = NULL;
                         }
                     }
 
@@ -154,9 +163,9 @@ void _parse_xml(yyjson_mut_doc* doc, yyjson_mut_val* root, char* xml) {
             }
             len = end - start;
             if (len > 0) {
-                children_arr = get_children_array(doc, current);
+                ensure_children_array(doc, current, &current_children);
 
-                yyjson_mut_arr_add_strn(doc, children_arr, start, len);
+                yyjson_mut_arr_add_strn(doc, current_children, start, len);
             }
         }
     }
