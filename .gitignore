@@ -4,3 +4,7 @@ node_modules/
 *.tgz
 
 .vscode/
+
+docs/paxl_core.wasm
+docs/paxl-browser.js
+docs/paxl-browser.js.map

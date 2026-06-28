@@ -17,7 +17,6 @@ EMSCRIPTEN_KEEPALIVE
 #endif
 parse_res* parse(char* xml) {
     parse_res* res = (parse_res*)malloc(sizeof(parse_res));
-    size_t json_len = 0;
     yyjson_mut_doc* doc = NULL;
     yyjson_mut_val* root = NULL;
 
