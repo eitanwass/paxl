@@ -6,6 +6,6 @@ typedef struct _parse_res_t {
     size_t json_len;
 } parse_res;
 
-parse_res* parse(char* xml);
+parse_res* parse(char* xml, int single_root);
 
 #endif  // __XML_H__
