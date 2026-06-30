@@ -1,5 +1,6 @@
 #ifndef NO_ENTRY
 #include <stdio.h>
+#include <string.h>
 #endif  // NO_ENTRY
 
 #ifdef __EMSCRIPTEN__
@@ -15,7 +16,7 @@
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-parse_res* parse(char* xml) {
+parse_res* parse(char* xml, int single_root) {
     parse_res* res = (parse_res*)malloc(sizeof(parse_res));
     yyjson_mut_doc* doc = NULL;
     yyjson_mut_val* root = NULL;
@@ -31,6 +32,16 @@ parse_res* parse(char* xml) {
 
     _parse_xml(doc, root, xml);
 
+    if (single_root) {
+        yyjson_mut_val* children = yyjson_mut_obj_get(root, CHILDREN_FIELD_NAME);
+        if (children && yyjson_mut_arr_size(children) == 1) {
+            yyjson_mut_val* only_child = yyjson_mut_arr_get_first(children);
+            if (yyjson_mut_is_obj(only_child)) {
+                yyjson_mut_doc_set_root(doc, only_child);
+            }
+        }
+    }
+
     res->json_ptr = yyjson_mut_write(doc, YYJSON_WRITE_ALLOW_INVALID_UNICODE, &res->json_len);
 
     yyjson_mut_doc_free(doc);
@@ -41,10 +52,11 @@ parse_res* parse(char* xml) {
 #ifndef NO_ENTRY
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <xml>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <xml> [single_root]\n", argv[0]);
         return -1;
     }
-    parse_res* res = parse(argv[1]);
+    int single_root = !(argc > 2 && strcmp(argv[2], "0") == 0);
+    parse_res* res = parse(argv[1], single_root);
     printf("%s\n", res->json_ptr);
     free(res);
 }

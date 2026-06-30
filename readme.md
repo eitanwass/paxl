@@ -35,8 +35,21 @@ const xml = `<root>
 
 const json = parse(xml);
 console.log(json);
-// Output: {"children":[{"tagName":"item","attributes":{"id":"1"},"children":[{"tagName":"name","children":["Example"]},{"tagName":"value","children":["42"]}]}]}
+// Output: {"tagName":"item","attributes":{"id":"1"},"children":[{"tagName":"name","children":["Example"]},{"tagName":"value","children":["42"]}]}
 ```
+
+### Options
+
+`parse(xml, options?)` accepts an optional second argument:
+
+- `singleRoot` (boolean, default `true`): when the document has exactly one root element, return that element directly instead of wrapping it in a top-level `children` array.
+
+```javascript
+parse(xml, { singleRoot: false });
+// Output: {"children":[{"tagName":"item","attributes":{"id":"1"},"children":[...]}]}
+```
+
+If the document has zero or multiple root elements, `singleRoot` has no effect and the `children` wrapper is kept.
 
 ## JSON Output Format
 
@@ -60,23 +73,19 @@ Becomes:
 
 ```json
 {
+  "tagName": "book",
+  "attributes": {
+    "id": "123",
+    "category": "fiction"
+  },
   "children": [
     {
-      "tagName": "book",
-      "attributes": {
-        "id": "123",
-        "category": "fiction"
-      },
-      "children": [
-        {
-          "tagName": "title",
-          "children": ["Sample Book"]
-        },
-        {
-          "tagName": "author",
-          "children": ["John Doe"]
-        }
-      ]
+      "tagName": "title",
+      "children": ["Sample Book"]
+    },
+    {
+      "tagName": "author",
+      "children": ["John Doe"]
     }
   ]
 }
@@ -138,7 +147,7 @@ Roadmap of features and support I want to implement, in no particular order.
 - [x] Online performance or/and demo
 - [ ] Remove yyjson for smaller in-house implementation (unused features)
 - Options:
-  - [ ] Single root option - eliminate top "children" element
+  - [x] Single root option - eliminate top "children" element
   - [ ] Parse comments
   - [ ] Custom keys (e.g. tagName -> my_tag_name)
 - Data validations? (Do we want that? Hit for performance)

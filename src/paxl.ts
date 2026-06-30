@@ -16,10 +16,17 @@ const { instance } = await WebAssembly.instantiate(data, {
 });
 
 type instanceExports = {
-  parse: (xml_ptr: number) => number;
+  parse: (xml_ptr: number, single_root: number) => number;
   memory: WebAssembly.Memory;
   malloc: (mem_len: number) => number;
   free: (ptr: number) => void;
+};
+
+export type ParseOptions = {
+  /** When true (the default) and the document has exactly one root element,
+   * return that element directly instead of wrapping it in a top-level
+   * `children` array. Set to false to keep the wrapper. */
+  singleRoot?: boolean;
 };
 
 const textDecoder = new TextDecoder("utf-8");
@@ -55,13 +62,13 @@ const cStringToJs = (memory: WebAssembly.Memory, resPtr: number) => {
   return res;
 }
 
-const parse = (xml: string): string => {
+const parse = (xml: string, options?: ParseOptions): string => {
   const in_ptr = jsStringToCString(xml, wasmMemory, malloc);
 
-  const resPtr = rawParse(in_ptr);
+  const resPtr = rawParse(in_ptr, options?.singleRoot === false ? 0 : 1);
 
   const str = cStringToJs(wasmMemory, resPtr);
-  
+
   free(in_ptr);
   free(resPtr);
 
